@@ -1,0 +1,887 @@
+openapi: 3.0.3
+info:
+  title: Library Management API
+  version: "1.0.0"
+  description: |
+    REST API for the library-management-sys service.
+    All successful responses use a common envelope: { "msg": string, "data": T | null }.
+servers:
+  - url: http://localhost:8080
+    description: Local HTTP server
+  - url: https://localhost:8080
+    description: Local HTTPS server (when TLS is configured)
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: User
+  - name: Books
+  - name: Admin
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service health status.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: integer
+                    format: int64
+                required: [status, timestamp]
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Token'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in an existing user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Token'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out current user
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/me:
+    get:
+      tags: [User]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: Profile fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_AboutMe'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/email:
+    put:
+      tags: [User]
+      summary: Update current user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailRequest'
+      responses:
+        '200':
+          description: Email updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/username:
+    put:
+      tags: [User]
+      summary: Update current user's username
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUsernameRequest'
+      responses:
+        '200':
+          description: Username updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /user/password:
+    put:
+      tags: [User]
+      summary: Update current user's password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books:
+    get:
+      tags: [Books]
+      summary: List all books
+      responses:
+        '200':
+          description: Books fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_BookInfoList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books/title/{title}:
+    get:
+      tags: [Books]
+      summary: List books by title
+      parameters:
+        - name: title
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Books fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_BookInfoList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books/author/{author}:
+    get:
+      tags: [Books]
+      summary: List books by author
+      parameters:
+        - name: author
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Books fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_BookInfoList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books/id/{id}:
+    get:
+      tags: [Books]
+      summary: Get book by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the book
+      responses:
+        '200':
+          description: Book fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_BookDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books/borrow/{id}:
+    post:
+      tags: [Books]
+      summary: Borrow a book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the book
+      responses:
+        '200':
+          description: Book borrowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /books/return/{id}:
+    post:
+      tags: [Books]
+      summary: Return a borrowed book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the book
+      responses:
+        '200':
+          description: Book returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users
+      description: Requires an admin JWT.
+      responses:
+        '200':
+          description: User list fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_UserInfoList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Admin]
+      summary: Create a new user
+      description: Requires an admin JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{id}:
+    get:
+      tags: [Admin]
+      summary: Get user by ID
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the user
+      responses:
+        '200':
+          description: User fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_UserInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Admin]
+      summary: Update a user
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Admin]
+      summary: Delete a user
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the user
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{id}/admin:
+    put:
+      tags: [Admin]
+      summary: Set or unset user admin role
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRoleRequest'
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/books:
+    post:
+      tags: [Admin]
+      summary: Create a new book
+      description: Requires an admin JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/books/{id}:
+    put:
+      tags: [Admin]
+      summary: Update a book
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookRequest'
+      responses:
+        '200':
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Admin]
+      summary: Delete a book
+      description: Requires an admin JWT.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId of the book
+      responses:
+        '200':
+          description: Book deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_Empty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        password:
+          type: string
+          minLength: 8
+      required: [email, username, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    UpdateEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+
+    UpdateUsernameRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+      required: [username]
+
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+          minLength: 8
+      required: [old_password, new_password]
+
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        password:
+          type: string
+          minLength: 8
+        is_admin:
+          type: boolean
+      required: [email, username, password, is_admin]
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        password:
+          type: string
+          minLength: 8
+
+    SetRoleRequest:
+      type: object
+      properties:
+        is_admin:
+          type: boolean
+      required: [is_admin]
+
+    CreateBookRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        author:
+          type: string
+          minLength: 1
+      required: [title, author]
+
+    UpdateBookRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        author:
+          type: string
+          minLength: 1
+        stock:
+          type: integer
+          format: int32
+
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+
+    AboutMe:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+      required: [email, username]
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId of the user
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        is_admin:
+          type: boolean
+      required: [id, email, username, is_admin]
+
+    BookInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId of the book
+        title:
+          type: string
+        author:
+          type: string
+        stock:
+          type: integer
+          format: int32
+      required: [id, title, author, stock]
+
+    BookDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId of the book
+        title:
+          type: string
+        author:
+          type: string
+        stock:
+          type: integer
+          format: int32
+      required: [id, title, author, stock]
+
+    ErrorResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+      required: [msg]
+
+    Response_Empty:
+      type: object
+      properties:
+        msg:
+          type: string
+      required: [msg]
+
+    Response_Token:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          $ref: '#/components/schemas/Token'
+      required: [msg, data]
+
+    Response_AboutMe:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          $ref: '#/components/schemas/AboutMe'
+      required: [msg, data]
+
+    Response_UserInfo:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          $ref: '#/components/schemas/UserInfo'
+      required: [msg, data]
+
+    Response_UserInfoList:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInfo'
+      required: [msg, data]
+
+    Response_BookInfoList:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookInfo'
+      required: [msg, data]
+
+    Response_BookDetail:
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          $ref: '#/components/schemas/BookDetail'
+      required: [msg, data]
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authorization error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

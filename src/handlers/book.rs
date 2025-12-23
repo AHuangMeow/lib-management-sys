@@ -1,6 +1,6 @@
 use crate::auth::AuthenticatedUser;
 use crate::constants::*;
-use crate::database::mongodb::BookRepository;
+use crate::database::mongodb::{BookRepository, UserRepository};
 use crate::errors::AppError;
 use crate::models::response::{BookDetail, BookInfo, Response};
 use actix_web::web::{scope, Data, Path};
@@ -14,6 +14,7 @@ async fn get_all_books(book_repo: Data<BookRepository>) -> Result<HttpResponse, 
     let infos: Vec<BookInfo> = books
         .into_iter()
         .map(|b| BookInfo {
+            id: b.id.to_hex(),
             title: b.title,
             author: b.author,
             stock: b.stock,
@@ -36,6 +37,7 @@ async fn get_books_by_title(
         .into_iter()
         .filter(|b| b.title == *title)
         .map(|b| BookInfo {
+            id: b.id.to_hex(),
             title: b.title,
             author: b.author,
             stock: b.stock,
@@ -58,6 +60,7 @@ async fn get_books_by_author(
         .into_iter()
         .filter(|b| b.author == *author)
         .map(|b| BookInfo {
+            id: b.id.to_hex(),
             title: b.title,
             author: b.author,
             stock: b.stock,
@@ -97,15 +100,27 @@ async fn get_book_by_id(
 
 #[post("/borrow/{id}")]
 async fn borrow_book(
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     book_repo: Data<BookRepository>,
+    user_repo: Data<UserRepository>,
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
         AppError::BadRequest("invalid book id".into())
     })?;
 
+    let user_id = ObjectId::parse_str(&user.user_id).map_err(|_| {
+        AppError::BadRequest("invalid user id".into())
+    })?;
+
     book_repo.borrow_book(&object_id).await?;
+
+    if let Err(e) = user_repo.add_borrowed_book(&user_id, &object_id).await {
+        if let Err(rollback_err) = book_repo.return_book(&object_id).await {
+            tracing::error!("failed to rollback book stock after user borrow failure: {:?}", rollback_err);
+        }
+        return Err(e);
+    }
 
     Ok(HttpResponse::Ok().json(Response::<()> {
         msg: BOOK_BORROWED.into(),
@@ -115,14 +130,20 @@ async fn borrow_book(
 
 #[post("/return/{id}")]
 async fn return_book(
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     book_repo: Data<BookRepository>,
+    user_repo: Data<UserRepository>,
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
         AppError::BadRequest("invalid book id".into())
     })?;
 
+    let user_id = ObjectId::parse_str(&user.user_id).map_err(|_| {
+        AppError::BadRequest("invalid user id".into())
+    })?;
+
+    user_repo.remove_borrowed_book(&user_id, &object_id).await?;
     book_repo.return_book(&object_id).await?;
 
     Ok(HttpResponse::Ok().json(Response::<()> {

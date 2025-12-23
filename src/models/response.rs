@@ -28,6 +28,7 @@ pub struct UserInfo {
 
 #[derive(Debug, Serialize)]
 pub struct BookInfo {
+    pub id: String,
     pub title: String,
     pub author: String,
     pub stock: i32,

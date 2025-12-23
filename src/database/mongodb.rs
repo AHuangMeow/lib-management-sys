@@ -1,4 +1,4 @@
-use crate::constants::{BOOK_ALREADY_EXISTS, COLLECTION_BOOKS, COLLECTION_USERS};
+use crate::constants::{BOOK_ALREADY_EXISTS, COLLECTION_BOOKS, COLLECTION_USERS, USER_NOT_FOUND};
 use crate::errors::AppError;
 use crate::models::book::Book;
 use crate::models::user::User;
@@ -107,6 +107,56 @@ impl UserRepository {
                 doc! { "$set": { "token_version": token_version } },
             )
             .await?;
+        Ok(())
+    }
+
+    pub async fn add_borrowed_book(
+        &self,
+        user_id: &ObjectId,
+        book_id: &ObjectId,
+    ) -> Result<(), AppError> {
+        let mut user = self
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(USER_NOT_FOUND.into()))?;
+
+        if user.borrowed_books.contains(book_id) {
+            return Err(AppError::BadRequest("book already borrowed".into()));
+        }
+
+        if user.borrowed_books.len() >= 8 {
+            return Err(AppError::BadRequest("borrow limit reached".into()));
+        }
+
+        user.borrowed_books.push(book_id.clone());
+
+        self.collection
+            .update_one(
+                doc! { "_id": user_id },
+                doc! { "$set": { "borrowed_books": &user.borrowed_books } },
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn remove_borrowed_book(
+        &self,
+        user_id: &ObjectId,
+        book_id: &ObjectId,
+    ) -> Result<(), AppError> {
+        let result = self
+            .collection
+            .update_one(
+                doc! { "_id": user_id, "borrowed_books": { "$in": [book_id] } },
+                doc! { "$pull": { "borrowed_books": book_id } },
+            )
+            .await?;
+
+        if result.modified_count == 0 {
+            return Err(AppError::BadRequest("book not borrowed by user".into()));
+        }
+
         Ok(())
     }
 }
