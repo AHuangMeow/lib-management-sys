@@ -1,4 +1,5 @@
 pub const COLLECTION_USERS: &str = "users";
+pub const COLLECTION_BOOKS: &str = "books";
 
 pub const DEFAULT_JWT_EXP_HOURS: i64 = 24;
 pub const MIN_JWT_SECRET_LENGTH: usize = 32;
@@ -22,7 +23,17 @@ pub const USER_DELETED: &str = "successfully deleted user";
 pub const USER_SET_AS_ADMIN: &str = "successfully set user as admin";
 pub const ADMIN_SET_AS_USER: &str = "successfully set admin as user";
 
+pub const BOOK_CREATED: &str = "successfully created book";
+pub const BOOK_UPDATED: &str = "successfully updated book";
+pub const BOOK_DELETED: &str = "successfully deleted book";
+pub const BOOK_INFO_FETCHED: &str = "successfully fetched book info";
+pub const BOOKS_FETCHED: &str = "successfully fetched books";
+pub const BOOK_BORROWED: &str = "successfully borrowed book";
+pub const BOOK_RETURNED: &str = "successfully returned book";
+pub const BOOK_NOT_FOUND: &str = "book not found";
+
 pub const EMAIL_ALREADY_EXISTS: &str = "email already registered";
+pub const BOOK_ALREADY_EXISTS: &str = "book already exists";
 pub const INVALID_CREDENTIALS: &str = "invalid username or password";
 pub const INVALID_OLD_PASSWORD: &str = "invalid old password";
 pub const USER_NOT_FOUND: &str = "user not found";

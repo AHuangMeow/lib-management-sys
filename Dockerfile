@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
-COPY --from=builder /app/target/release/server /app/server
+COPY --from=builder /app/target/release/lib-management-sys /app/server
 
 # Copy certificate generation script (optional)
 COPY generate_certs.sh ./

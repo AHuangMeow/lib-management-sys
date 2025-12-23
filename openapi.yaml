@@ -23,6 +23,8 @@ tags:
     description: User profile management (requires authentication)
   - name: Admin
     description: User administration (requires admin privileges)
+  - name: Book
+    description: Book catalogue and borrowing operations
 
 components:
   schemas:
@@ -708,5 +710,255 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/books:
+    post:
+      tags:
+        - Admin
+      summary: Create new book
+      description: Create a new book (admin only)
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                msg: successfully created book
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /admin/books/{id}:
+    put:
+      tags:
+        - Admin
+      summary: Update book
+      description: Update a book's information (admin only)
+      operationId: updateBook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Book ObjectId
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439012
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookRequest'
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                msg: successfully updated book
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Admin
+      summary: Delete book
+      description: Delete a book (admin only)
+      operationId: deleteBook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Book ObjectId
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439012
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                msg: successfully deleted book
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /books:
+    get:
+      tags:
+        - Book
+      summary: List all books
+      description: Retrieve all books (without IDs)
+      operationId: listBooks
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+
+  /books/title/{title}:
+    get:
+      tags:
+        - Book
+      summary: Find books by title
+      description: Retrieve books that match the given title
+      operationId: getBooksByTitle
+      parameters:
+        - name: title
+          in: path
+          required: true
+          description: Book title to search for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+
+  /books/author/{author}:
+    get:
+      tags:
+        - Book
+      summary: Find books by author
+      description: Retrieve books written by the given author
+      operationId: getBooksByAuthor
+      parameters:
+        - name: author
+          in: path
+          required: true
+          description: Author name to search for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+
+  /books/id/{id}:
+    get:
+      tags:
+        - Book
+      summary: Get book by ID
+      description: Retrieve detailed information for a specific book by ID
+      operationId: getBookById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Book ObjectId
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439012
+      responses:
+        '200':
+          description: Book retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /books/borrow/{id}:
+    post:
+      tags:
+        - Book
+      summary: Borrow a book
+      description: Borrow a book by ID (requires authentication)
+      operationId: borrowBook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Book ObjectId
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439012
+      responses:
+        '200':
+          description: Book borrowed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                msg: successfully borrowed book
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /books/return/{id}:
+    post:
+      tags:
+        - Book
+      summary: Return a book
+      description: Return a borrowed book by ID (requires authentication)
+      operationId: returnBook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Book ObjectId
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439012
+      responses:
+        '200':
+          description: Book returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                msg: successfully returned book
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'

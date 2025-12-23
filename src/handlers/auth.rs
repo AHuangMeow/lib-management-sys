@@ -38,6 +38,7 @@ async fn register(
         password_hash: hash,
         is_admin: false,
         token_version: 0,
+        borrowed_books: Vec::new(),
     };
     user_repo.create(&new_user).await?;
 

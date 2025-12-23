@@ -1,5 +1,6 @@
-use crate::constants::COLLECTION_USERS;
+use crate::constants::{BOOK_ALREADY_EXISTS, COLLECTION_BOOKS, COLLECTION_USERS};
 use crate::errors::AppError;
+use crate::models::book::Book;
 use crate::models::user::User;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
@@ -105,6 +106,103 @@ impl UserRepository {
                 doc! { "_id": id },
                 doc! { "$set": { "token_version": token_version } },
             )
+            .await?;
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct BookRepository {
+    collection: Collection<Book>,
+}
+
+impl BookRepository {
+    pub fn new(db: &Database) -> Self {
+        Self {
+            collection: db.collection::<Book>(COLLECTION_BOOKS),
+        }
+    }
+
+    pub async fn create(&self, title: &str, author: &str) -> Result<Book, AppError> {
+        if self
+            .collection
+            .find_one(doc! { "title": title, "author": author })
+            .await?
+            .is_some()
+        {
+            return Err(AppError::Conflict(BOOK_ALREADY_EXISTS.into()));
+        }
+
+        let book = Book {
+            id: ObjectId::new(),
+            title: title.to_string(),
+            author: author.to_string(),
+            stock: 0,
+        };
+
+        self.collection.insert_one(&book).await?;
+        Ok(book)
+    }
+
+    pub async fn find_by_id(&self, id: &ObjectId) -> Result<Option<Book>, AppError> {
+        Ok(self.collection.find_one(doc! { "_id": id }).await?)
+    }
+
+    pub async fn find_all(&self) -> Result<Vec<Book>, AppError> {
+        use futures::stream::TryStreamExt;
+        let mut cursor = self.collection.find(doc! {}).await?;
+        let mut books = Vec::new();
+        while let Some(book) = cursor.try_next().await? {
+            books.push(book);
+        }
+        Ok(books)
+    }
+
+    pub async fn delete_by_id(&self, id: &ObjectId) -> Result<(), AppError> {
+        self.collection.delete_one(doc! { "_id": id }).await?;
+        Ok(())
+    }
+
+    pub async fn update_title(&self, id: &ObjectId, title: &str) -> Result<(), AppError> {
+        self.collection
+            .update_one(doc! { "_id": id }, doc! { "$set": { "title": title } })
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_author(&self, id: &ObjectId, author: &str) -> Result<(), AppError> {
+        self.collection
+            .update_one(doc! { "_id": id }, doc! { "$set": { "author": author } })
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_stock(&self, id: &ObjectId, stock: i32) -> Result<(), AppError> {
+        self.collection
+            .update_one(doc! { "_id": id }, doc! { "$set": { "stock": stock } })
+            .await?;
+        Ok(())
+    }
+
+    pub async fn borrow_book(&self, id: &ObjectId) -> Result<(), AppError> {
+        let result = self
+            .collection
+            .update_one(
+                doc! { "_id": id, "stock": { "$gt": 0 } },
+                doc! { "$inc": { "stock": -1 } },
+            )
+            .await?;
+
+        if result.modified_count == 0 {
+            return Err(AppError::BadRequest("no stock available".into()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn return_book(&self, id: &ObjectId) -> Result<(), AppError> {
+        self.collection
+            .update_one(doc! { "_id": id }, doc! { "$inc": { "stock": 1 } })
             .await?;
         Ok(())
     }

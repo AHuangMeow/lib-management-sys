@@ -1,8 +1,10 @@
 use crate::auth::AdminUser;
 use crate::constants::*;
-use crate::database::mongodb::UserRepository;
+use crate::database::mongodb::{BookRepository, UserRepository};
 use crate::errors::AppError;
-use crate::models::request::{CreateUserRequest, SetRoleRequest, UpdateUserRequest};
+use crate::models::request::{
+    CreateBookRequest, CreateUserRequest, SetRoleRequest, UpdateBookRequest, UpdateUserRequest,
+};
 use crate::models::response::{Response, UserInfo};
 use crate::models::user::User;
 use crate::utils::password::hash_password;
@@ -57,6 +59,7 @@ async fn create_user(
         password_hash,
         is_admin: payload.is_admin,
         token_version: 0,
+        borrowed_books: Vec::new(),
     };
 
     user_repo.create(&user).await?;
@@ -188,6 +191,87 @@ async fn set_admin(
     }))
 }
 
+#[post("/books")]
+async fn create_book(
+    _admin: AdminUser,
+    book_repo: Data<BookRepository>,
+    payload: Json<CreateBookRequest>,
+) -> Result<HttpResponse, AppError> {
+    payload
+        .validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    book_repo
+        .create(&payload.title, &payload.author)
+        .await?;
+
+    Ok(HttpResponse::Created().json(Response::<()> {
+        msg: BOOK_CREATED.into(),
+        data: None,
+    }))
+}
+
+#[put("/books/{id}")]
+async fn update_book(
+    _admin: AdminUser,
+    book_repo: Data<BookRepository>,
+    id: Path<String>,
+    payload: Json<UpdateBookRequest>,
+) -> Result<HttpResponse, AppError> {
+    payload
+        .validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
+        AppError::BadRequest("invalid book id".into())
+    })?;
+
+    book_repo
+        .find_by_id(&object_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound(BOOK_NOT_FOUND.into()))?;
+
+    if let Some(ref title) = payload.title {
+        book_repo.update_title(&object_id, title).await?;
+    }
+
+    if let Some(ref author) = payload.author {
+        book_repo.update_author(&object_id, author).await?;
+    }
+
+    if let Some(stock) = payload.stock {
+        book_repo.update_stock(&object_id, stock).await?;
+    }
+
+    Ok(HttpResponse::Ok().json(Response::<()> {
+        msg: BOOK_UPDATED.into(),
+        data: None,
+    }))
+}
+
+#[delete("/books/{id}")]
+async fn delete_book(
+    _admin: AdminUser,
+    book_repo: Data<BookRepository>,
+    id: Path<String>,
+) -> Result<HttpResponse, AppError> {
+    let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
+        AppError::BadRequest("invalid book id".into())
+    })?;
+
+    book_repo
+        .find_by_id(&object_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound(BOOK_NOT_FOUND.into()))?;
+
+    book_repo.delete_by_id(&object_id).await?;
+
+    Ok(HttpResponse::Ok().json(Response::<()> {
+        msg: BOOK_DELETED.into(),
+        data: None,
+    }))
+}
+
 pub fn admin_scope() -> Scope {
     Scope::new("/admin")
         .service(get_all_users)
@@ -196,4 +280,7 @@ pub fn admin_scope() -> Scope {
         .service(update_user)
         .service(delete_user)
         .service(set_admin)
+        .service(create_book)
+        .service(update_book)
+        .service(delete_book)
 }

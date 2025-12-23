@@ -62,3 +62,20 @@ pub struct UpdateUserRequest {
 pub struct SetRoleRequest {
     pub is_admin: bool,
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateBookRequest {
+    #[validate(length(min = 1, message = "title must not be empty"))]
+    pub title: String,
+    #[validate(length(min = 1, message = "author must not be empty"))]
+    pub author: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateBookRequest {
+    #[validate(length(min = 1, message = "title must not be empty"))]
+    pub title: Option<String>,
+    #[validate(length(min = 1, message = "author must not be empty"))]
+    pub author: Option<String>,
+    pub stock: Option<i32>,
+}

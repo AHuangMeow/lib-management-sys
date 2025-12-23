@@ -25,3 +25,18 @@ pub struct UserInfo {
     pub username: String,
     pub is_admin: bool,
 }
+
+#[derive(Debug, Serialize)]
+pub struct BookInfo {
+    pub title: String,
+    pub author: String,
+    pub stock: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BookDetail {
+    pub id: String,
+    pub title: String,
+    pub author: String,
+    pub stock: i32,
+}

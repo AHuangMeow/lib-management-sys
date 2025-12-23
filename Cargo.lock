@@ -1491,6 +1491,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "lib-management-sys"
+version = "0.1.2"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "bcrypt",
+ "dotenvy",
+ "futures",
+ "jsonwebtoken",
+ "mongodb",
+ "rand_core 0.6.4",
+ "redis",
+ "rustls",
+ "rustls-pemfile",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-actix-web",
+ "tracing-subscriber",
+ "validator",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2413,32 +2439,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
-]
-
-[[package]]
-name = "server"
-version = "0.1.2"
-dependencies = [
- "actix-cors",
- "actix-web",
- "bcrypt",
- "dotenvy",
- "futures",
- "jsonwebtoken",
- "mongodb",
- "rand_core 0.6.4",
- "redis",
- "rustls",
- "rustls-pemfile",
- "serde",
- "serde_json",
- "thiserror",
- "time",
- "tokio",
- "tracing",
- "tracing-actix-web",
- "tracing-subscriber",
- "validator",
 ]
 
 [[package]]

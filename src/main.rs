@@ -9,9 +9,9 @@ mod utils;
 
 use crate::config::app_config::AppConfig;
 use crate::config::rustls_config::load_rustls_config;
-use crate::database::mongodb::{init_mongodb, UserRepository};
+use crate::database::mongodb::{init_mongodb, BookRepository, UserRepository};
 use crate::database::redis::{init_redis, TokenBlacklist};
-use crate::handlers::{admin_scope, auth_scope, health_check, user_scope};
+use crate::handlers::{admin_scope, auth_scope, book_scope, health_check, user_scope};
 use actix_cors::Cors;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -44,6 +44,7 @@ async fn main() -> Result<(), std::io::Error> {
         .expect("Failed to connect to Redis");
 
     let user_repo = UserRepository::new(&db);
+    let book_repo = BookRepository::new(&db);
     let blacklist = TokenBlacklist::new(redis_conn);
 
     let host = cfg.host.clone();
@@ -57,10 +58,12 @@ async fn main() -> Result<(), std::io::Error> {
             .wrap(tracing_actix_web::TracingLogger::default())
             .app_data(Data::new(cfg.clone()))
             .app_data(Data::new(user_repo.clone()))
+            .app_data(Data::new(book_repo.clone()))
             .app_data(Data::new(blacklist.clone()))
             .service(health_check)
             .service(auth_scope())
             .service(user_scope())
+            .service(book_scope())
             .service(admin_scope())
     });
 

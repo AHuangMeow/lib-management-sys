@@ -1,7 +1,7 @@
 services:
   server:
-    image: rust-server:latest
-    container_name: rust-server
+    image: library-server:latest
+    container_name: library-server
     ports:
       - "8080:8080"
     depends_on:
@@ -16,7 +16,7 @@ services:
 
   mongodb:
     image: mongo:latest
-    container_name: rust-server-mongodb
+    container_name: library-server-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: rust-server-redis
+    container_name: library-server-redis
     ports:
       - "6379:6379"
     volumes:

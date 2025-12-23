@@ -7,9 +7,9 @@ set -e
 
 REMOTE_HOST="${1:-your-server-ip}"
 REMOTE_USER="${2:-root}"
-REMOTE_PATH="/opt/rust-server"
-IMAGE_NAME="rust-server"
-TAR_FILE="rust-server.tar"
+REMOTE_PATH="/opt/library-server"
+IMAGE_NAME="library-server"
+TAR_FILE="library-server.tar"
 
 echo "=== 开始构建 Docker 镜像 ==="
 docker build -t ${IMAGE_NAME}:latest .
@@ -28,23 +28,23 @@ scp .env.example ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
 
 # 可选：上传证书文件
 if [ -d "certs" ] && [ "$(ls -A certs)" ]; then
-    echo "=== 发现证书文件，是否上传？(y/n) ==="
-    read -r upload_certs
-    if [ "$upload_certs" = "y" ]; then
-        ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_PATH}/certs"
-        scp certs/* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/certs/
-        ssh ${REMOTE_USER}@${REMOTE_HOST} "chmod 644 ${REMOTE_PATH}/certs/*.pem"
-        echo "✅ 证书文件已上传并设置权限"
-    fi
+  echo "=== 发现证书文件，是否上传？(y/n) ==="
+  read -r upload_certs
+  if [ "$upload_certs" = "y" ]; then
+    ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_PATH}/certs"
+    scp certs/* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/certs/
+    ssh ${REMOTE_USER}@${REMOTE_HOST} "chmod 644 ${REMOTE_PATH}/certs/*.pem"
+    echo "✅ 证书文件已上传并设置权限"
+  fi
 fi
 
 echo "=== 在远程服务器上部署 ==="
-ssh ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
-cd /opt/rust-server
+ssh ${REMOTE_USER}@${REMOTE_HOST} <<'ENDSSH'
+cd /opt/library-server
 
 # 解压并加载镜像
 echo "正在加载 Docker 镜像..."
-gunzip -c rust-server.tar.gz | docker load
+gunzip -c library-server.tar.gz | docker load
 
 # 检查 .env 文件
 if [ ! -f .env ]; then
@@ -74,7 +74,7 @@ echo "启动新容器..."
 docker-compose up -d
 
 # 清理
-rm -f rust-server.tar.gz
+rm -f library-server.tar.gz
 
 echo ""
 echo "✅ 部署完成！"
@@ -83,7 +83,7 @@ echo "服务状态："
 docker-compose ps
 echo ""
 echo "📝 后续步骤："
-echo "1. 编辑配置文件: nano /opt/rust-server/.env"
+echo "1. 编辑配置文件: nano /opt/library-server/.env"
 echo "2. 配置证书（如需 HTTPS）: 查看 CERTIFICATES.md"
 echo "3. 重启服务: docker-compose restart"
 echo "4. 查看日志: docker-compose logs -f"

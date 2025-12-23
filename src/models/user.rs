@@ -10,4 +10,6 @@ pub struct User {
     pub password_hash: String,
     pub is_admin: bool,
     pub token_version: i32,
+    #[serde(default)]
+    pub borrowed_books: Vec<ObjectId>,
 }
