@@ -16,6 +16,7 @@ pub struct Token {
 pub struct AboutMe {
     pub email: String,
     pub username: String,
+    pub borrowed_books: Vec<BookDetail>,
 }
 
 #[derive(Debug, Serialize)]

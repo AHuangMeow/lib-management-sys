@@ -1,9 +1,9 @@
 use crate::auth::AuthenticatedUser;
 use crate::constants::*;
-use crate::database::mongodb::UserRepository;
+use crate::database::mongodb::{BookRepository, UserRepository};
 use crate::errors::AppError;
 use crate::models::request::{UpdateEmailRequest, UpdatePasswordRequest, UpdateUsernameRequest};
-use crate::models::response::{AboutMe, Response};
+use crate::models::response::{AboutMe, BookDetail, Response};
 use crate::utils::password::{hash_password, verify_password};
 use actix_web::web::{scope, Data, Json};
 use actix_web::{get, put, HttpResponse};
@@ -13,6 +13,7 @@ use validator::Validate;
 #[get("/me")]
 pub async fn get_me(
     user_repo: Data<UserRepository>,
+    book_repo: Data<BookRepository>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, AppError> {
     let uid = ObjectId::parse_str(&user.user_id)?;
@@ -21,11 +22,24 @@ pub async fn get_me(
         .await?
         .ok_or(AppError::Unauthorized(USER_NOT_FOUND.into()))?;
 
+    let mut borrowed_books = Vec::new();
+    for book_id in &user_doc.borrowed_books {
+        if let Some(book) = book_repo.find_by_id(book_id).await? {
+            borrowed_books.push(BookDetail {
+                id: book.id.to_hex(),
+                title: book.title,
+                author: book.author,
+                stock: book.stock,
+            });
+        }
+    }
+
     Ok(HttpResponse::Ok().json(Response {
         msg: PROFILE_FETCHED.into(),
         data: Some(AboutMe {
             email: user_doc.email,
             username: user_doc.username,
+            borrowed_books,
         }),
     }))
 }

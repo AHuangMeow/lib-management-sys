@@ -729,7 +729,11 @@ components:
           format: email
         username:
           type: string
-      required: [email, username]
+        borrowed_books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookDetail'
+      required: [email, username, borrowed_books]
 
     UserInfo:
       type: object
