@@ -32,47 +32,27 @@ impl From<mongodb::bson::oid::Error> for AppError {
 
 impl ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
+        fn json_error(status: actix_web::http::StatusCode, msg: String) -> HttpResponse {
+            HttpResponse::build(status).json(Response::<()> { msg, data: None })
+        }
+
         match self {
-            AppError::BadRequest(msg) => HttpResponse::BadRequest().json(Response::<()> {
-                msg: msg.into(),
-                data: None,
-            }),
-            AppError::Unauthorized(msg) => HttpResponse::Unauthorized().json(Response::<()> {
-                msg: msg.into(),
-                data: None,
-            }),
-            AppError::Forbidden(msg) => HttpResponse::Forbidden().json(Response::<()> {
-                msg: msg.into(),
-                data: None,
-            }),
-            AppError::NotFound(msg) => HttpResponse::NotFound().json(Response::<()> {
-                msg: msg.into(),
-                data: None,
-            }),
-            AppError::Conflict(msg) => HttpResponse::Conflict().json(Response::<()> {
-                msg: msg.into(),
-                data: None,
-            }),
+            AppError::BadRequest(msg) => json_error(actix_web::http::StatusCode::BAD_REQUEST, msg.into()),
+            AppError::Unauthorized(msg) => json_error(actix_web::http::StatusCode::UNAUTHORIZED, msg.into()),
+            AppError::Forbidden(msg) => json_error(actix_web::http::StatusCode::FORBIDDEN, msg.into()),
+            AppError::NotFound(msg) => json_error(actix_web::http::StatusCode::NOT_FOUND, msg.into()),
+            AppError::Conflict(msg) => json_error(actix_web::http::StatusCode::CONFLICT, msg.into()),
             AppError::Database(e) => {
                 tracing::error!("Database error: {:?}", e);
-                HttpResponse::InternalServerError().json(Response::<()> {
-                    msg: INTERNAL_SERVER_ERROR.into(),
-                    data: None,
-                })
+                json_error(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.into())
             }
             AppError::Redis(e) => {
                 tracing::error!("Redis error: {:?}", e);
-                HttpResponse::InternalServerError().json(Response::<()> {
-                    msg: INTERNAL_SERVER_ERROR.into(),
-                    data: None,
-                })
+                json_error(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.into())
             }
             AppError::Internal => {
                 tracing::error!("Internal server error");
-                HttpResponse::InternalServerError().json(Response::<()> {
-                    msg: INTERNAL_SERVER_ERROR.into(),
-                    data: None,
-                })
+                json_error(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR.into())
             }
         }
     }

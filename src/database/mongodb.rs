@@ -208,6 +208,26 @@ impl BookRepository {
         Ok(books)
     }
 
+    pub async fn find_by_title(&self, title: &str) -> Result<Vec<Book>, AppError> {
+        use futures::stream::TryStreamExt;
+        let mut cursor = self.collection.find(doc! { "title": title }).await?;
+        let mut books = Vec::new();
+        while let Some(book) = cursor.try_next().await? {
+            books.push(book);
+        }
+        Ok(books)
+    }
+
+    pub async fn find_by_author(&self, author: &str) -> Result<Vec<Book>, AppError> {
+        use futures::stream::TryStreamExt;
+        let mut cursor = self.collection.find(doc! { "author": author }).await?;
+        let mut books = Vec::new();
+        while let Some(book) = cursor.try_next().await? {
+            books.push(book);
+        }
+        Ok(books)
+    }
+
     pub async fn delete_by_id(&self, id: &ObjectId) -> Result<(), AppError> {
         self.collection.delete_one(doc! { "_id": id }).await?;
         Ok(())

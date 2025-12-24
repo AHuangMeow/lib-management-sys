@@ -19,13 +19,13 @@ pub struct Claims {
 }
 
 pub fn generate_token(cfg: &AppConfig, user_id: &str, token_version: i32) -> Result<String, AppError> {
-    let now = OffsetDateTime::now_utc().unix_timestamp() as usize;
-    let exp =
-        (OffsetDateTime::now_utc() + Duration::hours(cfg.jwt_exp_hours)).unix_timestamp() as usize;
+    let now = OffsetDateTime::now_utc();
+    let iat = now.unix_timestamp() as usize;
+    let exp = (now + Duration::hours(cfg.jwt_exp_hours)).unix_timestamp() as usize;
     let claims = Claims {
         sub: user_id.into(),
         exp,
-        iat: now,
+        iat,
         ver: token_version,
     };
     encode(

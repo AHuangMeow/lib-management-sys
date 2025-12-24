@@ -32,10 +32,9 @@ async fn get_books_by_title(
     book_repo: Data<BookRepository>,
     title: Path<String>,
 ) -> Result<HttpResponse, AppError> {
-    let books = book_repo.find_all().await?;
+    let books = book_repo.find_by_title(title.as_str()).await?;
     let infos: Vec<BookInfo> = books
         .into_iter()
-        .filter(|b| b.title == *title)
         .map(|b| BookInfo {
             id: b.id.to_hex(),
             title: b.title,
@@ -55,10 +54,9 @@ async fn get_books_by_author(
     book_repo: Data<BookRepository>,
     author: Path<String>,
 ) -> Result<HttpResponse, AppError> {
-    let books = book_repo.find_all().await?;
+    let books = book_repo.find_by_author(author.as_str()).await?;
     let infos: Vec<BookInfo> = books
         .into_iter()
-        .filter(|b| b.author == *author)
         .map(|b| BookInfo {
             id: b.id.to_hex(),
             title: b.title,
@@ -79,7 +77,7 @@ async fn get_book_by_id(
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
-        AppError::BadRequest("invalid book id".into())
+        AppError::BadRequest(INVALID_BOOK_ID.into())
     })?;
 
     let book = book_repo
@@ -106,11 +104,11 @@ async fn borrow_book(
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
-        AppError::BadRequest("invalid book id".into())
+        AppError::BadRequest(INVALID_BOOK_ID.into())
     })?;
 
     let user_id = ObjectId::parse_str(&user.user_id).map_err(|_| {
-        AppError::BadRequest("invalid user id".into())
+        AppError::BadRequest(INVALID_USER_ID.into())
     })?;
 
     book_repo.borrow_book(&object_id).await?;
@@ -136,11 +134,11 @@ async fn return_book(
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
-        AppError::BadRequest("invalid book id".into())
+        AppError::BadRequest(INVALID_BOOK_ID.into())
     })?;
 
     let user_id = ObjectId::parse_str(&user.user_id).map_err(|_| {
-        AppError::BadRequest("invalid user id".into())
+        AppError::BadRequest(INVALID_USER_ID.into())
     })?;
 
     user_repo.remove_borrowed_book(&user_id, &object_id).await?;

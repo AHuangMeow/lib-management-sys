@@ -223,7 +223,7 @@ async fn update_book(
         .map_err(|e| AppError::BadRequest(e.to_string()))?;
 
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
-        AppError::BadRequest("invalid book id".into())
+        AppError::BadRequest(INVALID_BOOK_ID.into())
     })?;
 
     book_repo
@@ -256,7 +256,7 @@ async fn delete_book(
     id: Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|_| {
-        AppError::BadRequest("invalid book id".into())
+        AppError::BadRequest(INVALID_BOOK_ID.into())
     })?;
 
     book_repo

@@ -39,6 +39,7 @@ pub const INVALID_OLD_PASSWORD: &str = "invalid old password";
 pub const USER_NOT_FOUND: &str = "user not found";
 pub const AUTH_REQUIRED: &str = "authentication required";
 pub const INVALID_USER_ID: &str = "invalid user id";
+pub const INVALID_BOOK_ID: &str = "invalid book id";
 pub const PERMISSION_DENIED: &str = "permission denied";
 pub const INTERNAL_SERVER_ERROR: &str = "internal server error";
 
